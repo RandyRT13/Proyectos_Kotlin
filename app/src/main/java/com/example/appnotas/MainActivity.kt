@@ -5,15 +5,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -27,13 +26,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.appnotas.ui.theme.AppNotasTheme
 
+data class Nota(val id: Int, var titulo: String, var descripcion: String)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,8 +52,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNotas() {
     var notas by remember { mutableStateOf(listOf<Nota>())}
-    var titulo by remember { mutableStateOf("") }
-    var descripcion by remember { mutableStateOf("") }
+    var titulo by remember { mutableStateOf(TextFieldValue("")) }
+    var descripcion by remember { mutableStateOf(TextFieldValue("")) }
 
     Column (
         modifier = Modifier
@@ -77,77 +76,73 @@ fun AppNotas() {
         Spacer(modifier = Modifier.height(8.dp))
         Button(
             onClick = {
-                if (titulo.isNotEmpty() && descripcion.isNotEmpty()) {
-                    notas = notas + Nota(
-                        id = notas.size + 1,
-                        titulo = titulo,
-                        descripcion = descripcion
-                    )
+                if (titulo.text.isNotEmpty() && descripcion.text.isNotEmpty()) {
+                    notas = notas + Nota(notas.size, titulo.text, descripcion.text)
+                    titulo = TextFieldValue("")
+                    descripcion = TextFieldValue("")
                 }
             
             },
-            modifier = Modifier.align(Alignment.End)
         ) {
             Text("Nueva Nota")
         }
         Spacer(modifier = Modifier.height(16.dp))
         LazyColumn {
             items(notas) { nota ->
-                NotaItem(nota = nota, onDelete = {
-                    notas = notas.filter { it.id != nota.id }
-                })
+                NotaItem(nota,
+                    onEdit = {id: Int, newTitulo: String, newDescripcion: String ->
+                        notas = notas.map {
+                            if (it.id == id) it.copy(titulo = newTitulo, descripcion = newDescripcion) else it
+                        }
+                    },
+                    onDelete = { id: Int ->
+                        notas = notas.filter { it.id != id }
+                    }
+                )
             }
         }
-
     }
-
 }
 
+
 @Composable
-fun NotaItem(nota: Nota, onDelete: () -> Unit) {
+fun NotaItem(
+    nota: Nota,
+    onEdit: (Int, String, String) -> Unit,
+    onDelete: (Int) -> Unit
+) {
     Card(
         modifier = Modifier
+            .padding(8.dp)
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        elevation = 4.dp
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+    ){
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(text = nota.titulo, style = MaterialTheme.typography.headlineMedium)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = nota.descripcion)
             Spacer(modifier = Modifier.height(8.dp))
-            Row (
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                Button(onClick = onDelete) {
+            Text(text = nota.descripcion, style = MaterialTheme.typography.bodySmall)
+            Spacer(modifier = Modifier.height(8.dp))
+            Row {
+                Button(onClick = {
+                    val newTitulo = "Nuevo Titulo"
+                    val newDescripcion = "Nueva Descripcion"
+                    onEdit(nota.id, newTitulo, newDescripcion)
+                }) {
+                    Text("Editar")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(onClick = { onDelete(nota.id )}) {
                     Text("Borrar")
                     
                 }
             }
-
-
         }
     }
 }
 
-fun Card(modifier: Modifier, elevation: Dp, content: @Composable() (ColumnScope.() -> Unit)) {
-    TODO("Not yet implemented")
-}
-
 @Preview(showBackground = true)
 @Composable
-fun DefaultPreview() {
-    AppNotasTheme {
-        AppNotas()
-    }
+fun PreviewAppNotas() {
+    AppNotas()
 }
 
-data class Nota(
-    val id: Int,
-    val titulo: String,
-    val descripcion: String
-)
 
