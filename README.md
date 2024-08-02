@@ -11,3 +11,6 @@ Además no se podrá agregar una nota con el mismo titulo y descripción.
 
    Abre una terminal y ejecuta el siguiente comando:
     git clone https://github.com/RandyRT13/AppNotasKotlin.git
+
+    VIDEO:
+https://drive.google.com/file/d/1NrNaoAr4OmgfofPUouZxvYOKcHQJgTXb/view?usp=sharing
