@@ -56,6 +56,7 @@ fun AppNotas() {
     var titulo by remember { mutableStateOf(TextFieldValue("")) }
     var descripcion by remember { mutableStateOf(TextFieldValue("")) }
     var editarNota by remember { mutableStateOf<Nota?>(null) }
+    var errorMsg by remember { mutableStateOf<String?>(null) }
 
     Column (
         modifier = Modifier
@@ -80,10 +81,15 @@ fun AppNotas() {
         Button(
             onClick = {
                 if (titulo.text.isNotEmpty() && descripcion.text.isNotEmpty()) {
+                    if (notas.any { it.titulo == titulo.text && it.descripcion == descripcion.text }) {
+                        errorMsg = "Ya existe una nota con el mismo titulo y descripcion."
+                    } else {
                     notas = notas + Nota(notas.size, titulo.text, descripcion.text)
                     titulo = TextFieldValue("")
                     descripcion = TextFieldValue("")
+                    errorMsg = null
                 }
+                    }
             
             },
         ) {
@@ -113,14 +119,22 @@ fun AppNotas() {
                 nota = nota,
                 onDismiss = { editarNota = null },
                 onSave = {id, newTitulo, newDescripcion ->
+                    if (notas.any { it.titulo == newTitulo && it.descripcion == newDescripcion && it.id != id }) {
+                        errorMsg = "Ya existe una nota con el mismo Titulo y Descripcion."
+                    } else {
                     notas = notas.map {
                         if (it.id == id) it.copy(titulo = newTitulo, descripcion = newDescripcion) else it
                     }
                     editarNota = null
+                    errorMsg = null
 
+                }
                 }
 
             )
+        }
+        errorMsg?.let {
+            Text(text = it, color = MaterialTheme.colorScheme.error)
         }
     }
 }
