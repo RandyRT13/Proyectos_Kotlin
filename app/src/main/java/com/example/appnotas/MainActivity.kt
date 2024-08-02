@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
@@ -54,12 +55,14 @@ fun AppNotas() {
     var notas by remember { mutableStateOf(listOf<Nota>())}
     var titulo by remember { mutableStateOf(TextFieldValue("")) }
     var descripcion by remember { mutableStateOf(TextFieldValue("")) }
+    var editarNota by remember { mutableStateOf<Nota?>(null) }
 
     Column (
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        Spacer(modifier = Modifier.height(36.dp))
         TextField(
             value = titulo,
             onValueChange = { titulo = it },
@@ -97,9 +100,27 @@ fun AppNotas() {
                     },
                     onDelete = { id: Int ->
                         notas = notas.filter { it.id != id }
+                    },
+                    onStartEdit = { notaToEdit ->
+                        editarNota = notaToEdit
+
                     }
                 )
             }
+        }
+        editarNota?.let { nota ->
+            EditNotaDialog(
+                nota = nota,
+                onDismiss = { editarNota = null },
+                onSave = {id, newTitulo, newDescripcion ->
+                    notas = notas.map {
+                        if (it.id == id) it.copy(titulo = newTitulo, descripcion = newDescripcion) else it
+                    }
+                    editarNota = null
+
+                }
+
+            )
         }
     }
 }
@@ -109,7 +130,8 @@ fun AppNotas() {
 fun NotaItem(
     nota: Nota,
     onEdit: (Int, String, String) -> Unit,
-    onDelete: (Int) -> Unit
+    onDelete: (Int) -> Unit,
+    onStartEdit: (Nota) -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -122,10 +144,7 @@ fun NotaItem(
             Text(text = nota.descripcion, style = MaterialTheme.typography.bodySmall)
             Spacer(modifier = Modifier.height(8.dp))
             Row {
-                Button(onClick = {
-                    val newTitulo = "Nuevo Titulo"
-                    val newDescripcion = "Nueva Descripcion"
-                    onEdit(nota.id, newTitulo, newDescripcion)
+                Button(onClick = { onStartEdit(nota)
                 }) {
                     Text("Editar")
                 }
@@ -138,6 +157,55 @@ fun NotaItem(
         }
     }
 }
+
+@Composable
+fun EditNotaDialog(
+    nota: Nota,
+    onDismiss: () -> Unit,
+    onSave: (Int, String, String) -> Unit
+) {
+    var newTitulo by remember { mutableStateOf(TextFieldValue(nota.titulo)) }
+    var newDescripcion by remember { mutableStateOf(TextFieldValue(nota.descripcion)) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Editar Nota") },
+        text = {
+            Column {
+                TextField(
+                    value = newTitulo,
+                    onValueChange = { newTitulo = it },
+                    label = { Text("Titulo") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                TextField(
+                    value = newDescripcion,
+                    onValueChange = { newDescripcion = it },
+                    label = { Text("Descripcion") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick =  {
+                onSave(nota.id, newTitulo.text, newDescripcion.text)
+
+            }) {
+                Text("Guardar")
+            }
+
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+
+
 
 @Preview(showBackground = true)
 @Composable
